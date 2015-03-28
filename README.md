@@ -37,6 +37,10 @@ optional arguments:
 
 Without sbucket selection (world-wide 500 probes): 
 ![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/without-sbucket.png "Map without sbucket.")
+
+This distribution is biased, because it prefers areas with a high density of probes. Here you can see the global distribution of probes by country code:
+![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/probes-per-country.png "Probe Numbers by Country.")
+
 With sbucket selection (world-wide 500 probes): 
 ![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/with-sbucket.png "Map with sbucket.")
 
