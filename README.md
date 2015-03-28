@@ -38,11 +38,14 @@ optional arguments:
 Without sbucket selection (world-wide 500 probes): 
 ![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/without-sbucket.png "Map without sbucket.")
 
-This distribution is biased, because it prefers areas with a high density of probes. Here you can see the global distribution of probes by country code:
-![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/probes-per-country.png "Probe Numbers by Country.")
+The distribution is biased, because it prefers areas with a high density of probes. Here you can see the global distribution of probes by country code:
+![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/WW500-probes-per-country.png "Probe Numbers by Country (WW500).")
 
 With sbucket selection (world-wide 500 probes): 
 ![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/with-sbucket.png "Map with sbucket.")
+
+After application of the spacial bucket algorithm this distribution has a much longer tail (thus includes more countries) and small countries with high probe density are moved down and large countries are moved up the ladder:
+![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/SB500-probes-per-country.png "Probe Numbers by Country (WW500).")
 
 ## Algorithm
 It tries to find a grid with roughly square cells where the number of cells by iterating over grid sizes. It stops after a grid was found which yields the number of probes (with a 5% error margin) OR a maximum number of iterations have been performed.
