@@ -33,6 +33,57 @@ def getProbes(probes, online=True, country_codes=None):
     return selected_probes
 
 
+def bucketing(probes, target_count, projection='merc', max_iter=100):
+    p_latlong = pyproj.Proj(proj='latlong')
+    p_dst = pyproj.Proj(proj=projection)
+    
+    for p in probes:
+        try:
+            # Project to targeted map projection
+            p['proj'] = \
+                pyproj.transform(p_latlong, p_dst, float(p['longitude']), float(p['latitude']))
+        except:
+            # ignore probes with bad long/lat information
+            pass
+    
+    min_dst = pyproj.transform(p_latlong, p_dst, -180, -85.)
+    max_dst = pyproj.transform(p_latlong, p_dst, 180, 85.)
+    
+    # Initial cell counts
+    bucket_counts = (10, 20) # verticaly and horizontaly
+    buckets = {}
+    
+    # 10% acceptable deviation
+    while abs(len(buckets)-target_count) > 0.05*target_count and not max_iter <= 0:
+        if len(buckets) < target_count:
+            bucket_counts = bucket_counts[0]*1.5, bucket_counts[1]*1.5
+        else:
+            bucket_counts = bucket_counts[0]*0.9, bucket_counts[1]*0.9
+    
+        div = ((max_dst[0]-min_dst[0])/bucket_counts[0],
+               (max_dst[1]-min_dst[1])/bucket_counts[1])
+        
+        buckets = {}
+        for p in probes:
+            if not 'proj' in p:
+                continue
+            
+            key = (int(p['proj'][0]/div[0]), int(p['proj'][1]/div[1]))
+            if key not in buckets:
+                buckets[key] = [p['id']]
+            else:
+                buckets[key].append(p['id'])
+        
+        max_iter -= 1
+    
+    return buckets
+
+
+def random_selection(buckets):
+    for b in buckets.values():
+        yield random.choice(b)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Spatial bucketing of RIPE Atlas probes.')
     parser.add_argument('probedata', type=file, help='dump of probe metadata')
@@ -52,58 +103,16 @@ def main():
         probes.append(json.loads(line))
     probes = getProbes(probes, country_codes=args.country)
     
-    p_latlong = pyproj.Proj(proj='latlong')
-    p_dst = pyproj.Proj(proj=args.projection)
-    
-    for p in probes:
-        try:
-            # Project to targeted map projection
-            p['proj'] = \
-                pyproj.transform(p_latlong, p_dst, float(p['longitude']), float(p['latitude']))
-        except:
-            # ignore probes with bad long/lat information
-            pass
-    
-    min_dst = pyproj.transform(p_latlong, p_dst, -180, -85.)
-    max_dst = pyproj.transform(p_latlong, p_dst, 180, 85.)
-    
-    target_count = int(sys.argv[2])
-    cell_counts = (10, 20)
-    cells = {}
-    
-    # 10% acceptable deviation
-    max_iter = args.maxiter
-    while abs(len(cells)-target_count) > 0.05*target_count and not max_iter <= 0:
-        if len(cells) < target_count:
-            cell_counts = cell_counts[0]*1.5, cell_counts[1]*1.5
-        else:
-            cell_counts = cell_counts[0]*0.9, cell_counts[1]*0.9
-    
-        cells = {}
-        
-        div = ((max_dst[0]-min_dst[0])/cell_counts[0],
-               (max_dst[1]-min_dst[1])/cell_counts[1])
-        
-        cells = {}
-        for p in probes:
-            if not 'proj' in p:
-                continue
-            
-            key = (int(p['proj'][0]/div[0]), int(p['proj'][1]/div[1]))
-            if key not in cells:
-                cells[key] = [p['id']]
-            else:
-                cells[key].append(p['id'])
-        
-        max_iter -= 1
+    buckets = bucketing(probes, args.count, projection=args.projection, max_iter=args.maxiter)
+    probes = list(random_selection(buckets))
     
     if args.verbose >= 1:
         print("selected probes:",)
     
-    print([random.choice(c) for c in cells.values()])
+    print(probes)
     
     if args.verbose >= 1:
-        print('count:', len(cells))
+        print('count:', len(probes))
     
     if args.verbose >= 2:
         print()
@@ -119,9 +128,9 @@ def main():
                 "resolve_on_probe": False,
                 "type": "ping"}],
             "probes": [{
-                "value": ",".join([str(random.choice(c)) for c in cells.values()]),
+                "value": ",".join(probes),
                 "type": "probes",
-                "requested": len(cells)}],
+                "requested": len(probes)}],
             "is_oneoff": True})+"'", "https://atlas.ripe.net/api/v1/measurement/?key=INSERT_KEY_HERE")
 
 if __name__ == '__main__':
