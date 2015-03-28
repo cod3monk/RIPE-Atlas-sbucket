@@ -36,9 +36,9 @@ optional arguments:
 ```
 
 Without sbucket selection (world-wide 500 probes): 
-![alt text](https://github.com/codemonk/RIPE-Atlas-sbucket/raw/master/without-sbucket.png "Map without sbucket.")
+![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/without-sbucket.png "Map without sbucket.")
 With sbucket selection (world-wide 500 probes): 
-![alt text](https://github.com/codemonk/RIPE-Atlas-sbucket/raw/master/with-sbucket.png "Map with sbucket.")
+![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/with-sbucket.png "Map with sbucket.")
 
 ## Algorithm
 It tries to find a grid with roughly square cells where the number of cells by iterating over grid sizes. It stops after a grid was found which yields the number of probes (with a 5% error margin) OR a maximum number of iterations have been performed.
