@@ -94,7 +94,7 @@ def main():
     parser.add_argument('count', type=int, help='number of probes to be returned')
     parser.add_argument('--maxiter', '-m', type=int, default=100, help='maximum number of '
         'iterations to be performed (default: 100)')
-    parser.add_argument('--country', '-c', nargs='+', help='Allowed countries. If not set: '
+    parser.add_argument('--country', '-c', action='append', help='Allowed countries. If not set: '
         'world-wide.')
     parser.add_argument('--verbose', '-v', action='count', default=0)
         
@@ -105,17 +105,8 @@ def main():
         for line in args.data.readlines():
             probes.append(json.loads(line))
     else:
-        offset = 0
-        while True:
-            f = urllib2.urlopen('https://atlas.ripe.net/api/v1/probe/'
-                '?format=json&limit=100&offset={}&status=1'.format(offset))
-            new_probes = json.load(f)['objects']
-            probes += new_probes
-            
-            if not new_probes:
-                break
-            else:
-                offset += 100
+        f = urllib2.urlopen('https://atlas.ripe.net/api/v1/probe-archive/?format=json&status=1')
+        probes = json.load(f)['objects']
     probes = getProbes(probes, country_codes=args.country)
     
     buckets = bucketing(probes, args.count, projection=args.projection, max_iter=args.maxiter)
@@ -143,7 +134,7 @@ def main():
                 "resolve_on_probe": False,
                 "type": "ping"}],
             "probes": [{
-                "value": ",".join(probes),
+                "value": ",".join(map(str, probes)),
                 "type": "probes",
                 "requested": len(probes)}],
             "is_oneoff": True})+"'", "https://atlas.ripe.net/api/v1/measurement/?key=INSERT_KEY_HERE")
