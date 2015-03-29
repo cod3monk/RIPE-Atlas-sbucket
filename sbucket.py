@@ -108,7 +108,7 @@ def main():
         offset = 0
         while True:
             f = urllib2.urlopen('https://atlas.ripe.net/api/v1/probe/'
-                '?format=json&limit=100&offset={}'.format(offset))
+                '?format=json&limit=100&offset={}&status=1'.format(offset))
             new_probes = json.load(f)['objects']
             probes += new_probes
             
