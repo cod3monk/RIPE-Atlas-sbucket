@@ -12,6 +12,7 @@ import sys
 import json
 import argparse
 import random
+import urllib2
 
 import pyproj
 
@@ -86,7 +87,8 @@ def random_selection(buckets):
 
 def main():
     parser = argparse.ArgumentParser(description='Spatial bucketing of RIPE Atlas probes.')
-    parser.add_argument('probedata', type=file, help='dump of probe metadata')
+    parser.add_argument('--data', '-d', type=file, required=False, help='dump of probe metadata, '
+        'if not given data is retrieved from atlas.ripe.net')
     parser.add_argument('--projection', '-p', default='merc', help='projection to use for spatial '
         'distribution, has to be supported by pyproj (default: merc)')
     parser.add_argument('count', type=int, help='number of probes to be returned')
@@ -99,8 +101,21 @@ def main():
     args = parser.parse_args()
     
     probes = []
-    for line in args.probedata.readlines():
-        probes.append(json.loads(line))
+    if args.data:
+        for line in args.data.readlines():
+            probes.append(json.loads(line))
+    else:
+        offset = 0
+        while True:
+            f = urllib2.urlopen('https://atlas.ripe.net/api/v1/probe/'
+                '?format=json&limit=100&offset={}'.format(offset))
+            new_probes = json.load(f)['objects']
+            probes += new_probes
+            
+            if not new_probes:
+                break
+            else:
+                offset += 100
     probes = getProbes(probes, country_codes=args.country)
     
     buckets = bucketing(probes, args.count, projection=args.projection, max_iter=args.maxiter)
