@@ -5,18 +5,20 @@ This tool selects probes based on spatial distribution on an arbitrary map proje
 
 ## Usage
 ```
-usage: sbucket.py [-h] [--projection PROJECTION] [--maxiter MAXITER]
-                  [--country COUNTRY [COUNTRY ...]] [--verbose]
-                  probedata count
+usage: sbucket.py [-h] [--data DATA] [--projection PROJECTION]
+                  [--maxiter MAXITER] [--country COUNTRY [COUNTRY ...]]
+                  [--verbose]
+                  count
 
 Spatial bucketing of RIPE Atlas probes.
 
 positional arguments:
-  probedata             dump of probe metadata
   count                 number of probes to be returned
 
 optional arguments:
   -h, --help            show this help message and exit
+  --data DATA, -d DATA  dump of probe metadata, if not given data is retrieved
+                        from atlas.ripe.net
   --projection PROJECTION, -p PROJECTION
                         projection to use for spatial distribution, has to be
                         supported by pyproj (default: merc)
@@ -26,7 +28,6 @@ optional arguments:
   --country COUNTRY [COUNTRY ...], -c COUNTRY [COUNTRY ...]
                         Allowed countries. If not set: world-wide.
   --verbose, -v
-
 ```
 
 ## Example
