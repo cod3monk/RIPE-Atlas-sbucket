@@ -21,15 +21,17 @@ def getProbes(probes, online=True, country_codes=None):
     selected_probes = []
     for p in probes:
         # Filtering probes
-        if online and p['status'] != 1:
+        if online and p['status']['id'] != 1:
             continue
         if country_codes and p['country_code'] not in country_codes:
+            continue
+        if not p['geometry'] or not p['geometry']['coordinates']:
             continue
         
         selected_probes.append({
             'id': p['id'],
-            'longitude': p['longitude'],
-            'latitude': p['latitude']})
+            'longitude': p['geometry']['coordinates'][1],
+            'latitude': p['geometry']['coordinates'][0]})
     
     return selected_probes
 
@@ -87,8 +89,9 @@ def random_selection(buckets):
 
 def main():
     parser = argparse.ArgumentParser(description='Spatial bucketing of RIPE Atlas probes.')
-    parser.add_argument('--data', '-d', type=file, required=False, help='dump of probe metadata, '
-        'if not given data is retrieved from atlas.ripe.net')
+    parser.add_argument('--data', '-d', type=file, required=False, help='dump of probe metadata '
+        '(from https://atlas.ripe.net/api/v2/probes/?format=json&status=1&fields='
+        'id,status,country_code,geometry) ,if not given data is retrieved from atlas.ripe.net')
     parser.add_argument('--projection', '-p', default='merc', help='projection to use for spatial '
         'distribution, has to be supported by pyproj (default: merc)')
     parser.add_argument('count', type=int, help='number of probes to be returned')
@@ -102,18 +105,21 @@ def main():
     
     probes = []
     if args.data:
-        for line in args.data.readlines():
-            probes.append(json.loads(line))
+        f = args.data
     else:
-        f = urllib2.urlopen('https://atlas.ripe.net/api/v1/probe-archive/?format=json&status=1')
-        probes = json.load(f)['objects']
+        f = urllib2.urlopen('https://atlas.ripe.net/api/v2/probes/?format=json&status=1&fields=id,status,country_code,geometry')
+    probes = json.load(f)['results']
+    if args.verbose >= 1:
+        print("received {} raw entries.".format(len(probes)))
     probes = getProbes(probes, country_codes=args.country)
+    if args.verbose >= 1:
+        print("received {} probes.".format(len(probes)))
     
     buckets = bucketing(probes, args.count, projection=args.projection, max_iter=args.maxiter)
     probes = list(random_selection(buckets))
     
     if args.verbose >= 1:
-        print("selected probes:",)
+        print("selected {} probes:".format(len(probes)))
     
     print(probes)
     
