@@ -107,8 +107,16 @@ def main():
     if args.data:
         f = args.data
     else:
-        f = urllib2.urlopen('https://atlas.ripe.net/api/v2/probes/?format=json&status=1&fields=id,status,country_code,geometry')
-    probes = json.load(f)['results']
+        # Load json from RIPE API and follow next urls
+        next_url = ('https://atlas.ripe.net/api/v2/probes/?format=json&status=1&'
+                    'fields=id,status,country_code,geometry&page_size=500')
+        while next_url:
+            if args.verbose >= 2:
+                print("loading {}".format(next_url))
+            f = urllib2.urlopen(next_url)
+            result = json.load(f)
+            probes += result['results']
+            next_url = result['next']
     if args.verbose >= 1:
         print("received {} raw entries.".format(len(probes)))
     probes = getProbes(probes, country_codes=args.country)
