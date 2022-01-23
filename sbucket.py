@@ -1,18 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Spatial Bucketing of RIPE Atlas Probes on Map Projections
 
 Author: Julian Hammer <julian.hammer@u-sys.org>
 License: AGPLv3
 '''
-from __future__ import print_function
-from __future__ import division
-
 import sys
 import json
 import argparse
 import random
-import urllib2
+import urllib.request
 
 import pyproj
 
@@ -27,11 +24,12 @@ def getProbes(probes, online=True, country_codes=None):
             continue
         if not p['geometry'] or not p['geometry']['coordinates']:
             continue
-        
+
+        # Coordinates are in GeoJSON format: longitude, latitude.
         selected_probes.append({
             'id': p['id'],
-            'longitude': p['geometry']['coordinates'][1],
-            'latitude': p['geometry']['coordinates'][0]})
+            'longitude': p['geometry']['coordinates'][0],
+            'latitude': p['geometry']['coordinates'][1]})
     
     return selected_probes
 
@@ -89,7 +87,7 @@ def random_selection(buckets):
 
 def main():
     parser = argparse.ArgumentParser(description='Spatial bucketing of RIPE Atlas probes.')
-    parser.add_argument('--data', '-d', type=file, required=False, help='dump of probe metadata '
+    parser.add_argument('--data', '-d', type=argparse.FileType('r'), required=False, help='dump of probe metadata '
         '(from https://atlas.ripe.net/api/v2/probes/?format=json&status=1&fields='
         'id,status,country_code,geometry) ,if not given data is retrieved from atlas.ripe.net')
     parser.add_argument('--projection', '-p', default='merc', help='projection to use for spatial '
@@ -106,6 +104,7 @@ def main():
     probes = []
     if args.data:
         f = args.data
+        probes = json.load(f)['results']
     else:
         # Load json from RIPE API and follow next urls
         next_url = ('https://atlas.ripe.net/api/v2/probes/?format=json&status=1&'
@@ -113,7 +112,7 @@ def main():
         while next_url:
             if args.verbose >= 2:
                 print("loading {}".format(next_url))
-            f = urllib2.urlopen(next_url)
+            f = urllib.request.urlopen(next_url)
             result = json.load(f)
             probes += result['results']
             next_url = result['next']
