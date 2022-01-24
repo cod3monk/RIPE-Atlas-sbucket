@@ -30,53 +30,53 @@ def getProbes(probes, online=True, country_codes=None):
             'id': p['id'],
             'longitude': p['geometry']['coordinates'][0],
             'latitude': p['geometry']['coordinates'][1]})
-    
+
     return selected_probes
 
 
 def bucketing(probes, target_count, projection='merc', max_iter=100):
-    p_latlong = pyproj.Proj(proj='latlong')
+    # Convert 3D to 2D coordinates using given map projection.
+    # This is not the recommended way to transform coordinates with pyproj,
+    # but works for our simple use case where we don't care about datum shifts.
     p_dst = pyproj.Proj(proj=projection)
-    
+
     for p in probes:
         try:
-            # Project to targeted map projection
-            p['proj'] = \
-                pyproj.transform(p_latlong, p_dst, float(p['longitude']), float(p['latitude']))
+            p['proj'] = p_dst(float(p['longitude']), float(p['latitude']))
         except:
             # ignore probes with bad long/lat information
             pass
-    
-    min_dst = pyproj.transform(p_latlong, p_dst, -180, -85.)
-    max_dst = pyproj.transform(p_latlong, p_dst, 180, 85.)
-    
+
+    min_dst = p_dst(-180, -85.)
+    max_dst = p_dst(180, 85.)
+
     # Initial cell counts
-    bucket_counts = (10, 20) # verticaly and horizontaly
+    bucket_counts = (10, 20)  # vertical and horizontal
     buckets = {}
-    
-    # 10% acceptable deviation
+
+    # 5% acceptable deviation
     while abs(len(buckets)-target_count) > 0.05*target_count and not max_iter <= 0:
         if len(buckets) < target_count:
             bucket_counts = bucket_counts[0]*1.5, bucket_counts[1]*1.5
         else:
             bucket_counts = bucket_counts[0]*0.9, bucket_counts[1]*0.9
-    
+
         div = ((max_dst[0]-min_dst[0])/bucket_counts[0],
                (max_dst[1]-min_dst[1])/bucket_counts[1])
-        
+
         buckets = {}
         for p in probes:
             if not 'proj' in p:
                 continue
-            
+
             key = (int(p['proj'][0]/div[0]), int(p['proj'][1]/div[1]))
             if key not in buckets:
                 buckets[key] = [p['id']]
             else:
                 buckets[key].append(p['id'])
-        
+
         max_iter -= 1
-    
+
     return buckets
 
 
@@ -98,9 +98,9 @@ def main():
     parser.add_argument('--country', '-c', action='append', help='Allowed countries. If not set: '
         'world-wide.')
     parser.add_argument('--verbose', '-v', action='count', default=0)
-        
+
     args = parser.parse_args()
-    
+
     probes = []
     if args.data:
         f = args.data
@@ -116,23 +116,26 @@ def main():
             result = json.load(f)
             probes += result['results']
             next_url = result['next']
+        # DEBUG: Save downloaded probes list for later runs.  Maybe should be command-line option.
+        #with open("probes.json", "w") as outfile:
+        #    outfile.write('{"results": [\n' + ',\n'.join([json.dumps(p) for p in probes]) + "\n]}")
     if args.verbose >= 1:
         print("received {} raw entries.".format(len(probes)))
     probes = getProbes(probes, country_codes=args.country)
     if args.verbose >= 1:
         print("received {} probes.".format(len(probes)))
-    
+
     buckets = bucketing(probes, args.count, projection=args.projection, max_iter=args.maxiter)
     probes = list(random_selection(buckets))
-    
+
     if args.verbose >= 1:
         print("selected {} probes:".format(len(probes)))
-    
+
     print(probes)
-    
+
     if args.verbose >= 1:
         print('count:', len(probes))
-    
+
     if args.verbose >= 2:
         print()
         print('example measurement creation:')
@@ -151,6 +154,7 @@ def main():
                 "type": "probes",
                 "requested": len(probes)}],
             "is_oneoff": True})+"'", "https://atlas.ripe.net/api/v1/measurement/?key=INSERT_KEY_HERE")
+
 
 if __name__ == '__main__':
     main()

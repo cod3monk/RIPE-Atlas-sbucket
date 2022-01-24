@@ -42,7 +42,7 @@ $ sbucket.py 100
 $
 ```
 
-Without sbucket selection (world-wide 500 probes): 
+Without sbucket selection (world-wide 500 probes):
 ![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/without-sbucket.png "Map without sbucket.")
 
 The distribution is biased, because it prefers areas with a high density of probes. Here you can see the global distribution of probes by country code:
@@ -55,13 +55,13 @@ After application of the spacial bucket algorithm this distribution has a much l
 ![alt text](https://github.com/cod3monk/RIPE-Atlas-sbucket/raw/master/SB500-probes-per-country.png "Probe Numbers by Country (WW500).")
 
 ## Algorithm
-It tries to find a grid with roughly square cells where the number of cells by iterating over grid sizes. It stops after a grid was found which yields the number of probes (with a 5% error margin) OR a maximum number of iterations have been performed.
+It tries to find a grid with the right number of cells by iterating over grid sizes. It stops after a grid was found which yields the number of probes (with a 5% error margin) OR a maximum number of iterations have been performed.
 
 If the number of probes is bellow the targeted count, the cell number is increased (vertically and horizontally) by 50%, otherwise it is reduce by 10%.
 
-Within one cell a random probe is selected.
+Within one cell a random probe is selected.  Grid cells are roughly square.
 
 ## Known Problems
  * Selection might yield more or less probes then expected, no guarantees here, but it works well for larger numbers (>20).
- * The grid is set between 85 degrees north and east, this might be a problem with other projections than mercartor
+ * The grid is set between 85 degrees north and south, this might be a problem with other projections than Mercator.
  
